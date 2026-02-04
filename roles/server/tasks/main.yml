@@ -1,35 +1,16 @@
 ---
-- name: Install PHP and extensions
+- name: Install PHP packages
   apt:
-    name: 
-      - apache2
-      - php
-      - libapache2-mod-php
-      - php-pgsql
-      - php-xml
-      - php-mbstring
-      - php-curl
-      - php-zip
-      - php-bcmath
-      - git
-      - unzip
+    name: [apache2, php, libapache2-mod-php, php-pgsql, php-xml, php-mbstring, php-curl, php-zip, php-bcmath, git, unzip]
     state: present
-    update_cache: yes
 
-- name: Nuclear clean /var/www/html
+- name: Clean and Clone
   file:
     path: /var/www/html
-    state: absent
+    state: "{{ item }}"
+  with_items: [absent, directory]
 
-- name: Create /var/www/html
-  file:
-    path: /var/www/html
-    state: directory
-    owner: www-data
-    group: www-data
-    mode: '0755'
-
-- name: Clone App
+- name: Git Clone
   git:
     repo: 'https://github.com/Practical-DevOps/app-for-devops.git'
     dest: /var/www/html
@@ -45,39 +26,34 @@
   args:
     chdir: /var/www/html
 
-- name: Fix Permissions for storage and cache
+- name: Laravel Setup
+  shell: |
+    php artisan key:generate --force
+    php artisan session:table
+    php artisan migrate --force
+    php artisan config:clear
+  args:
+    chdir: /var/www/html
+
+- name: Permissions
   file:
-    path: "/var/www/html/{{ item }}"
+    path: /var/www/html/{{ item }}
     owner: www-data
     group: www-data
     mode: '0777'
     recurse: yes
-  with_items:
-    - storage
-    - bootstrap/cache
+  with_items: [storage, bootstrap/cache]
 
-- name: Key Generate and Migrate
-  shell: |
-    php artisan key:generate --force
-    php artisan migrate --force
-    php artisan config:clear
-    php artisan cache:clear
-  args:
-    chdir: /var/www/html
+- name: Apache Config
+  shell: a2enmod rewrite
 
-- name: Enable Apache rewrite and restart
-  shell: |
-    a2enmod rewrite
-  notify: restart apache
-
-- name: Update Apache Config
+- name: VirtualHost
   copy:
     dest: /etc/apache2/sites-available/000-default.conf
     content: |
       <VirtualHost *:80>
           DocumentRoot /var/www/html/public
           <Directory /var/www/html/public>
-              Options Indexes FollowSymLinks
               AllowOverride All
               Require all granted
           </Directory>
