@@ -1,0 +1,10 @@
+galaxy_info:
+  author: your_name
+  description: Apache and Laravel role
+  license: MIT
+  min_ansible_version: "2.1"
+  platforms:
+    - name: Ubuntu
+      versions: [22.04]
+  galaxy_tags: [web, laravel, apache]
+dependencies: []

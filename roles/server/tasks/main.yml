@@ -1,0 +1,39 @@
+---
+- name: Install Web Packages
+  apt:
+    name: [apache2, php, libapache2-mod-php, php-pgsql, php-xml, php-mbstring, git, unzip]
+    state: present
+
+- name: Install Composer
+  shell: curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer creates=/usr/local/bin/composer
+
+- name: Clone App
+  git:
+    repo: 'https://github.com/Practical-DevOps/app-for-devops.git'
+    dest: /var/www/html
+    force: yes
+
+- name: Setup .env
+  template:
+    src: env.j2
+    dest: /var/www/html/.env
+
+- name: Composer Install
+  shell: composer install --no-interaction
+  args:
+    chdir: /var/www/html
+
+- name: Key Generate and Migrate
+  shell: |
+    php artisan key:generate --force
+    php artisan migrate --force
+  args:
+    chdir: /var/www/html
+
+- name: Fix Permissions
+  file:
+    path: /var/www/html/storage
+    owner: www-data
+    group: www-data
+    mode: '0775'
+    recurse: yes
