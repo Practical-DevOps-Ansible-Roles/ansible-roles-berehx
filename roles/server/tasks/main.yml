@@ -1,16 +1,21 @@
 ---
 - name: Install Web Packages
   apt:
-    name: [apache2, php, libapache2-mod-php, php-pgsql, php-xml, php-mbstring, php-bcmath, php-curl, git, unzip]
+    name: [apache2, php, libapache2-mod-php, php-pgsql, php-xml, php-mbstring, php-bcmath, php-curl, php-zip, php-intl, git, unzip]
     state: present
 
-- name: Nuclear clean and recreate /var/www/html
+- name: Nuclear clean /var/www/html
   file:
     path: /var/www/html
-    state: "{{ item }}"
-  with_items:
-    - absent
-    - directory
+    state: absent
+
+- name: Create /var/www/html
+  file:
+    path: /var/www/html
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
 
 - name: Clone App
   git:
@@ -32,16 +37,23 @@
   shell: |
     php artisan key:generate --force
     php artisan migrate --force
-    php artisan config:cache
+    php artisan config:clear
+    php artisan cache:clear
   args:
     chdir: /var/www/html
 
 - name: Fix Permissions
   file:
-    path: "/var/www/html/{{ item }}"
+    path: /var/www/html
     owner: www-data
     group: www-data
-    mode: '0775'
+    mode: '0755'
+    recurse: yes
+
+- name: Fix Storage and Cache Permissions
+  file:
+    path: "/var/www/html/{{ item }}"
+    mode: '0777'
     recurse: yes
   with_items:
     - storage
