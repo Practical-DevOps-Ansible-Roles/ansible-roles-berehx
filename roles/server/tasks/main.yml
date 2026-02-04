@@ -4,10 +4,13 @@
     name: [apache2, php, libapache2-mod-php, php-pgsql, php-xml, php-mbstring, git, unzip]
     state: present
 
-- name: Clean /var/www/html
+- name: Nuclear clean and recreate /var/www/html
   file:
-    path: /var/www/html/index.html
-    state: absent
+    path: /var/www/html
+    state: "{{ item }}"
+  with_items:
+    - absent
+    - directory
 
 - name: Clone App
   git:
