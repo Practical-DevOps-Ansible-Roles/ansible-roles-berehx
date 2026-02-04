@@ -5,6 +5,12 @@
     state: present
     update_cache: yes
 
+- name: Ensure PostgreSQL is started
+  service:
+    name: postgresql
+    state: started
+    enabled: yes
+
 - name: Create database
   become_user: postgres
   postgresql_db:
@@ -17,10 +23,3 @@
     name: "{{ db_user }}"
     password: "{{ db_pass }}"
     priv: "ALL"
-    trust_id_auth: yes
-
-- name: Allow local connections
-  lineinfile:
-    path: /etc/postgresql/14/main/pg_hba.conf
-    line: "host all all 127.0.0.1/32 md5"
-  notify: restart postgresql
