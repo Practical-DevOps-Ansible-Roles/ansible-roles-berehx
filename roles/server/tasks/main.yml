@@ -50,7 +50,7 @@
   shell: a2enmod rewrite
   notify: restart apache
 
-- name: Update Apache Config for Laravel
+- name: Update Apache Config
   copy:
     dest: /etc/apache2/sites-available/000-default.conf
     content: |
