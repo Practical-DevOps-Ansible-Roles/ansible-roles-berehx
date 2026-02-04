@@ -1,8 +1,9 @@
 ---
-- name: Install Web Packages
+- name: Install Web and JS Packages
   apt:
-    name: [apache2, php, libapache2-mod-php, php-pgsql, php-xml, php-mbstring, php-curl, php-zip, git, unzip]
+    name: [apache2, php, libapache2-mod-php, php-pgsql, php-xml, php-mbstring, php-curl, php-zip, git, unzip, nodejs, npm]
     state: present
+    update_cache: yes
 
 - name: Prepare directory
   file:
@@ -21,20 +22,22 @@
     src: env.j2
     dest: /var/www/html/.env
 
-- name: Composer
-  shell: composer install --no-interaction
+- name: Composer and NPM Install
+  shell: |
+    composer install --no-interaction
+    npm install
+    npm run dev
   args:
     chdir: /var/www/html
 
 - name: Laravel Init
   shell: |
     php artisan key:generate --force
-    php artisan migrate:fresh --force
-    php artisan config:clear
+    php artisan migrate:fresh --seed --force
   args:
     chdir: /var/www/html
 
-- name: Permissions (The Brutal Way)
+- name: Brutal Permissions
   file:
     path: /var/www/html
     owner: www-data
