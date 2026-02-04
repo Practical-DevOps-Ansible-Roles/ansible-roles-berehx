@@ -1,8 +1,20 @@
 ---
-- name: Install Web Packages
+- name: Install PHP and extensions
   apt:
-    name: [apache2, php, libapache2-mod-php, php-pgsql, php-xml, php-mbstring, php-bcmath, php-curl, php-zip, php-intl, git, unzip]
+    name: 
+      - apache2
+      - php
+      - libapache2-mod-php
+      - php-pgsql
+      - php-xml
+      - php-mbstring
+      - php-curl
+      - php-zip
+      - php-bcmath
+      - git
+      - unzip
     state: present
+    update_cache: yes
 
 - name: Nuclear clean /var/www/html
   file:
@@ -33,6 +45,17 @@
   args:
     chdir: /var/www/html
 
+- name: Fix Permissions for storage and cache
+  file:
+    path: "/var/www/html/{{ item }}"
+    owner: www-data
+    group: www-data
+    mode: '0777'
+    recurse: yes
+  with_items:
+    - storage
+    - bootstrap/cache
+
 - name: Key Generate and Migrate
   shell: |
     php artisan key:generate --force
@@ -42,25 +65,9 @@
   args:
     chdir: /var/www/html
 
-- name: Fix Permissions
-  file:
-    path: /var/www/html
-    owner: www-data
-    group: www-data
-    mode: '0755'
-    recurse: yes
-
-- name: Fix Storage and Cache Permissions
-  file:
-    path: "/var/www/html/{{ item }}"
-    mode: '0777'
-    recurse: yes
-  with_items:
-    - storage
-    - bootstrap/cache
-
-- name: Enable Apache rewrite module
-  shell: a2enmod rewrite
+- name: Enable Apache rewrite and restart
+  shell: |
+    a2enmod rewrite
   notify: restart apache
 
 - name: Update Apache Config
@@ -74,7 +81,5 @@
               AllowOverride All
               Require all granted
           </Directory>
-          ErrorLog ${APACHE_LOG_DIR}/error.log
-          CustomLog ${APACHE_LOG_DIR}/access.log combined
       </VirtualHost>
   notify: restart apache
