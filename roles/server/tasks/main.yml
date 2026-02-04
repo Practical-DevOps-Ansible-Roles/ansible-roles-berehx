@@ -1,53 +1,48 @@
 ---
-- name: Install PHP packages
+- name: Install Web Packages
   apt:
-    name: [apache2, php, libapache2-mod-php, php-pgsql, php-xml, php-mbstring, php-curl, php-zip, php-bcmath, git, unzip]
+    name: [apache2, php, libapache2-mod-php, php-pgsql, php-xml, php-mbstring, php-curl, php-zip, git, unzip]
     state: present
 
-- name: Clean and Clone
+- name: Prepare directory
   file:
     path: /var/www/html
     state: "{{ item }}"
   with_items: [absent, directory]
 
-- name: Git Clone
+- name: Clone
   git:
     repo: 'https://github.com/Practical-DevOps/app-for-devops.git'
     dest: /var/www/html
     force: yes
 
-- name: Setup .env
+- name: .env
   template:
     src: env.j2
     dest: /var/www/html/.env
 
-- name: Composer Install
+- name: Composer
   shell: composer install --no-interaction
   args:
     chdir: /var/www/html
 
-- name: Laravel Setup
+- name: Laravel Init
   shell: |
     php artisan key:generate --force
-    php artisan session:table
-    php artisan migrate --force
+    php artisan migrate:fresh --force
     php artisan config:clear
   args:
     chdir: /var/www/html
 
-- name: Permissions
+- name: Permissions (The Brutal Way)
   file:
-    path: /var/www/html/{{ item }}
+    path: /var/www/html
     owner: www-data
     group: www-data
     mode: '0777'
     recurse: yes
-  with_items: [storage, bootstrap/cache]
 
 - name: Apache Config
-  shell: a2enmod rewrite
-
-- name: VirtualHost
   copy:
     dest: /etc/apache2/sites-available/000-default.conf
     content: |
@@ -58,4 +53,8 @@
               Require all granted
           </Directory>
       </VirtualHost>
-  notify: restart apache
+
+- name: Finalize Apache
+  shell: |
+    a2enmod rewrite
+    systemctl restart apache2
