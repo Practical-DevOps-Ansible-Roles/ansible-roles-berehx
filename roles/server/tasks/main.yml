@@ -46,9 +46,22 @@
     - storage
     - bootstrap/cache
 
-- name: Update Apache DocumentRoot to public
-  lineinfile:
-    path: /etc/apache2/sites-available/000-default.conf
-    regexp: 'DocumentRoot /var/www/html'
-    line: '        DocumentRoot /var/www/html/public'
+- name: Enable Apache rewrite module
+  shell: a2enmod rewrite
+  notify: restart apache
+
+- name: Update Apache Config for Laravel
+  copy:
+    dest: /etc/apache2/sites-available/000-default.conf
+    content: |
+      <VirtualHost *:80>
+          DocumentRoot /var/www/html/public
+          <Directory /var/www/html/public>
+              Options Indexes FollowSymLinks
+              AllowOverride All
+              Require all granted
+          </Directory>
+          ErrorLog ${APACHE_LOG_DIR}/error.log
+          CustomLog ${APACHE_LOG_DIR}/access.log combined
+      </VirtualHost>
   notify: restart apache
