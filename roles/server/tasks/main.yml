@@ -1,7 +1,7 @@
 ---
 - name: Install Web Packages
   apt:
-    name: [apache2, php, libapache2-mod-php, php-pgsql, php-xml, php-mbstring, git, unzip]
+    name: [apache2, php, libapache2-mod-php, php-pgsql, php-xml, php-mbstring, php-bcmath, php-curl, git, unzip]
     state: present
 
 - name: Nuclear clean and recreate /var/www/html
@@ -32,6 +32,7 @@
   shell: |
     php artisan key:generate --force
     php artisan migrate --force
+    php artisan config:cache
   args:
     chdir: /var/www/html
 
