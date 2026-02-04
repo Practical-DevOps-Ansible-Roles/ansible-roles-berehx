@@ -4,8 +4,10 @@
     name: [apache2, php, libapache2-mod-php, php-pgsql, php-xml, php-mbstring, git, unzip]
     state: present
 
-- name: Install Composer
-  shell: curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer creates=/usr/local/bin/composer
+- name: Clean /var/www/html
+  file:
+    path: /var/www/html/index.html
+    state: absent
 
 - name: Clone App
   git:
