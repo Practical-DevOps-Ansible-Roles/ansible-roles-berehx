@@ -23,10 +23,11 @@
     password: "{{ db_pass }}"
     state: present
 
-- name: Grant permissions
+- name: Grant schema permissions
   become_user: postgres
   postgresql_privs:
     db: "{{ db_name }}"
     role: "{{ db_user }}"
-    objs: ALL_IN_SCHEMA
+    type: schema
+    objs: public
     privs: ALL
