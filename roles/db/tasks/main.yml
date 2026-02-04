@@ -19,7 +19,14 @@
 - name: Create user
   become_user: postgres
   postgresql_user:
-    db: "{{ db_name }}"
     name: "{{ db_user }}"
     password: "{{ db_pass }}"
-    priv: "ALL"
+    state: present
+
+- name: Grant permissions
+  become_user: postgres
+  postgresql_privs:
+    db: "{{ db_name }}"
+    role: "{{ db_user }}"
+    objs: ALL_IN_SCHEMA
+    privs: ALL
