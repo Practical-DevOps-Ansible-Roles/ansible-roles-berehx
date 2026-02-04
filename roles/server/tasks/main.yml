@@ -37,8 +37,18 @@
 
 - name: Fix Permissions
   file:
-    path: /var/www/html/storage
+    path: "/var/www/html/{{ item }}"
     owner: www-data
     group: www-data
     mode: '0775'
     recurse: yes
+  with_items:
+    - storage
+    - bootstrap/cache
+
+- name: Update Apache DocumentRoot to public
+  lineinfile:
+    path: /etc/apache2/sites-available/000-default.conf
+    regexp: 'DocumentRoot /var/www/html'
+    line: '        DocumentRoot /var/www/html/public'
+  notify: restart apache
