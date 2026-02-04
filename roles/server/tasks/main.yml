@@ -1,43 +1,42 @@
 ---
-- name: Install Web and JS Packages
+- name: Install Essential Packages
   apt:
-    name: [apache2, php, libapache2-mod-php, php-pgsql, php-xml, php-mbstring, php-curl, php-zip, git, unzip, nodejs, npm]
+    name: [apache2, php, libapache2-mod-php, php-pgsql, php-xml, php-mbstring, php-curl, git, unzip]
     state: present
-    update_cache: yes
 
-- name: Prepare directory
+- name: Clear and Clone
   file:
     path: /var/www/html
     state: "{{ item }}"
   with_items: [absent, directory]
 
-- name: Clone
+- name: Clone Repository
   git:
     repo: 'https://github.com/Practical-DevOps/app-for-devops.git'
     dest: /var/www/html
     force: yes
 
-- name: .env
+- name: Setup .env
   template:
     src: env.j2
     dest: /var/www/html/.env
 
-- name: Composer and NPM Install
-  shell: |
-    composer install --no-interaction
-    npm install
-    npm run dev
+- name: Fast Composer Install
+  shell: composer install --no-interaction --no-dev --ignore-platform-reqs
   args:
     chdir: /var/www/html
 
-- name: Laravel Init
+- name: Laravel Setup
   shell: |
     php artisan key:generate --force
-    php artisan migrate:fresh --seed --force
+    php artisan migrate:fresh --force
+    mkdir -p public/build
+    touch public/mix-manifest.json
+    echo '{}' > public/mix-manifest.json
   args:
     chdir: /var/www/html
 
-- name: Brutal Permissions
+- name: Full Permissions
   file:
     path: /var/www/html
     owner: www-data
@@ -45,7 +44,7 @@
     mode: '0777'
     recurse: yes
 
-- name: Apache Config
+- name: Apache Setup
   copy:
     dest: /etc/apache2/sites-available/000-default.conf
     content: |
@@ -57,7 +56,5 @@
           </Directory>
       </VirtualHost>
 
-- name: Finalize Apache
-  shell: |
-    a2enmod rewrite
-    systemctl restart apache2
+- name: Restart Apache
+  shell: a2enmod rewrite && systemctl restart apache2
